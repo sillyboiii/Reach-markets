@@ -146,7 +146,7 @@ export default function MarketsPage() {
     return 0;
   });
 
-  const categories = ['All', ...new Set(creators.map((c) => c.category))];
+  const categories = ['All', ...Array.from(new Set(creators.map((c) => c.category)))];
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f1419', color: '#e5e7eb' }}>
