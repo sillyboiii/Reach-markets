@@ -33,7 +33,7 @@ export default async function handler(
 
     // Extract trending handles
     const tweets = response.data.data || [];
-    const authorIds = [...new Set(tweets.map((t: any) => t.author_id))];
+    const authorIds = Array.from(new Set(tweets.map((t: any) => t.author_id)));
 
     // Get user details (limited to 100)
     const usersResponse = await axios.get(
