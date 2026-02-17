@@ -435,7 +435,7 @@ export default function MarketsPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Clock size={14} />
-                    {formatRelativeTime(market.lastUpdate)}
+                    {formatRelativeTime(market.endTime)}
                   </div>
                 </div>
               </div>
