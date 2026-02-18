@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,37 +11,38 @@ export default async function handler(
   }
 
   try {
-    // Note: Google Trends doesn't have an official API
-    // You can use google-trends-api npm package or a third-party service
-    // For this example, we'll use mock data but structure it properly
+    // google-trends-api is a CommonJS module — require it at runtime
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const googleTrends = require('google-trends-api');
 
-    const apiKey = process.env.GOOGLE_TRENDS_API_KEY;
+    const raw = await googleTrends.interestOverTime({
+      keyword,
+      startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // last 7 days
+    });
 
-    if (!apiKey) {
-      console.warn('No Google Trends API key - using mock data');
-      return res.status(200).json({
-        interest: Math.floor(Math.random() * 100) + 20,
-        timestamp: new Date().toISOString(),
-      });
+    const parsed = JSON.parse(raw);
+    const timelineData: Array<{ value: number[] }> =
+      parsed?.default?.timelineData ?? [];
+
+    if (timelineData.length === 0) {
+      throw new Error('No timeline data from Google Trends');
     }
 
-    // If you have a third-party Google Trends API service:
-    // const response = await axios.get('https://trends-api-service.com/search', {
-    //   params: { keyword, timeframe: 'now 1-d' },
-    //   headers: { 'X-API-Key': apiKey }
-    // });
+    // Average the last few data points for a stable number
+    const recent = timelineData.slice(-5);
+    const avg =
+      recent.reduce((sum, d) => sum + (d.value[0] ?? 0), 0) / recent.length;
 
-    // For now, return mock data
     res.status(200).json({
-      interest: Math.floor(Math.random() * 100) + 20,
+      interest: Math.round(avg),
       timestamp: new Date().toISOString(),
-      mock: true,
     });
   } catch (error: any) {
     console.error('Google Trends error:', error.message);
 
+    // Stable fallback — not random, so scores don't jump on each call
     res.status(200).json({
-      interest: Math.floor(Math.random() * 100) + 20,
+      interest: 50,
       timestamp: new Date().toISOString(),
       mock: true,
     });

@@ -15,21 +15,24 @@ export default async function handler(
     const bearerToken = process.env.TWITTER_BEARER_TOKEN;
 
     if (!bearerToken) {
-      // Fallback to mock data if no API key
       console.warn('No Twitter API key - using mock data');
       return res.status(200).json({
         count: Math.floor(Math.random() * 1000) + 200,
         timestamp: new Date().toISOString(),
+        mock: true,
       });
     }
 
-    // Twitter API v2: Recent search endpoint
+    // Free tier: use recent search endpoint and count results
+    // (tweets/counts/recent requires Basic $100/mo tier)
+    const query = `${handle} -is:retweet lang:en`;
     const response = await axios.get(
-      'https://api.twitter.com/2/tweets/counts/recent',
+      'https://api.twitter.com/2/tweets/search/recent',
       {
         params: {
-          query: handle,
-          granularity: 'hour',
+          query,
+          max_results: 100,
+          'tweet.fields': 'created_at',
         },
         headers: {
           Authorization: `Bearer ${bearerToken}`,
@@ -37,16 +40,15 @@ export default async function handler(
       }
     );
 
-    const totalCount = response.data.meta?.total_tweet_count || 0;
+    const count = response.data.meta?.result_count ?? 0;
 
     res.status(200).json({
-      count: totalCount,
+      count,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Twitter API error:', error.message);
-    
-    // Return mock data on error
+    console.error('Twitter API error:', error.response?.data || error.message);
+
     res.status(200).json({
       count: Math.floor(Math.random() * 1000) + 200,
       timestamp: new Date().toISOString(),
